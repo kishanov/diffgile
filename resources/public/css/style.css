@@ -1,0 +1,61 @@
+/* some style */
+
+body {
+    font-family: "Open Sans", sans-serif !important;
+}
+
+body {
+    background-color: #2B333C !important;
+    /*padding: 0 40px 40px 40px;*/
+}
+
+#main-area {
+    color: #777;
+    background-color: #f9f9f9;
+    margin: 0px 40px 40px 40px;
+    padding: 30px 30px 50px 30px;
+}
+
+.task {
+    height: 100px;
+    padding: 10px 15px 10px 15px;
+    margin-top: 10px;
+    color: white;
+    font-size: 14px;
+    border-radius: 10px;
+}
+
+.task-bug {
+    background-color: #fc8675 !important;
+}
+
+.task-ai {
+    background-color: #6bafbd !important;
+}
+
+.task-story {
+    background-color: #65cea7 !important;
+}
+
+.task-icon {
+    opacity: 0.3;
+    position: absolute;
+    font-size: 60px !important;
+    right: 30px;
+    top: 30px;
+}
+
+.assignee {
+    position: absolute;
+    font-size: 16px !important;
+    left: 30px;
+    bottom: 10px;
+}
+
+h3 {
+    color: #777 !important;
+}
+
+h2 {
+    color: #E23D28 !important;
+}

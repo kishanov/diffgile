@@ -1,5 +1,5 @@
 .idea/
-js.compiled/
+resources/public/js.compiled/
 .lein-env
 .nrepl-port
 *.iml
