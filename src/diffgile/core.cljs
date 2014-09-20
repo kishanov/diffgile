@@ -59,6 +59,14 @@
                  ["Imlpement Sign Up Page"
                   "Conifgure CI Server"
                   "Reflect & contemplate"
+                  "Deploy OpenStack"
+                  "Fix Issue #65"
+                  "Design Doc for messaging system"
+                  "database migration"
+                  "Issue 1"
+                  "Issue 2"
+                  "Issue 3"
+                  "She's got issues."
                   "Publish coverage report"]))
 
 
