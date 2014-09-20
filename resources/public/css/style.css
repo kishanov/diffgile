@@ -37,6 +37,10 @@ body {
     background-color: #65cea7 !important;
 }
 
+.task-old {
+    background-color: #d9d9d9 !important;
+}
+
 .task-icon {
     opacity: 0.3;
     position: absolute;

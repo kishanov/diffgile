@@ -31,43 +31,43 @@
                              (map-indexed (fn [idx itm] [itm idx])
                                           (map :key task-states))))
 
+(def date-range (mapv #(str "2014-09-" %) (range 10 30)))
 
 
-;(defn expand-dates-range
-;  [tasks]
-;  (mapcat)
-;
-;  )
+(defn generate-activity
+  [date-range task-states]
+  (let [start (rand-int (dec (count date-range)))
+        log (mapv (fn [date]
+                    {:date date :status (rand-nth task-states)})
+                  (drop start date-range))]
+
+    (assoc-in log [0 :status] (task-states 0))))
+
+(def search-filter (atom {:start-date (last date-range)
+                          :end-date   (last date-range)}))
 
 
-(def tasks [{:summary  "Imlpement Sign Up Page"
-             :type     (rand-nth task-types)
-             :assignee (rand-nth staff)
-             :log      [{:date "2014-09-17" :status (task-states 0)}
-                        {:date "2014-09-18" :status (rand-nth task-states)}
-                        {:date "2014-09-19" :status (rand-nth task-states)}]}
 
-            {:summary  "Configure CI server"
-             :type     (rand-nth task-types)
-             :assignee (rand-nth staff)
-             :log      [{:date "2014-09-10" :status (task-states 0)}
-                        {:date "2014-09-15" :status (rand-nth task-states)}
-                        {:date "2014-09-18" :status (rand-nth task-states)}]}
+;(generate-activity date-range task-states)
 
-            {:summary  "Reflect & contemlpate"
-             :type     (rand-nth task-types)
-             :assignee (rand-nth staff)
-             :log      [{:date "2014-09-19" :status (task-states 0)}]}
 
-            {:summary  "Conquer the World"
-             :type     (rand-nth task-types)
-             :assignee (rand-nth staff)
-             :log      [{:date "2014-09-12" :status (task-states 0)}
-                        {:date "2014-09-13" :status (rand-nth task-states)}
-                        {:date "2014-09-14" :status (rand-nth task-states)}
-                        {:date "2014-09-16" :status (rand-nth task-states)}
-                        {:date "2014-09-19" :status (rand-nth task-states)}]}])
+(def tasks (mapv (fn [summary]
+                   {:summary  summary
+                    :type     (rand-nth task-types)
+                    :assignee (rand-nth staff)
+                    :log      (generate-activity date-range task-states)})
+                 ["Imlpement Sign Up Page"
+                  "Conifgure CI Server"
+                  "Reflect & contemplate"
+                  "Publish coverage report"]))
 
+
+
+(defn filter-start-date
+  [tasks start-date]
+  (search-filter (fn [task]
+                   (>= 0 (compare (-> task :log first :date) start-date)))
+                 tasks))
 
 
 (defn empty-row
@@ -76,13 +76,13 @@
                    (let [cols-count (count task-states)
                          col-grid-size (quot 12 cols-count)
                          div (keyword (str "div.col-md-" col-grid-size))]
-                     (into [] (repeat cols-count [div]))))))
+                     (into [] (repeat cols-count [div ""]))))))
 
 
 (defn set-cell-text
   [row idx text]
   (let [cur-val (get-in row [(inc idx)])]
-    (assoc-in row [(inc idx)] (conj cur-val text))))
+    (assoc-in row [(inc idx) 1] text)))
 
 
 (defn board-header
@@ -94,31 +94,74 @@
 
 (board-header)
 
+
+(defn task-box
+  [task class]
+  [:div {:class (clojure.string/join " " ["task" class])}
+   [:div.task-icon
+    [:span {:class "glyphicon glyphicon-tasks"}]]
+   [:h4 (task :summary)]
+   [:div.assignee [:span {:class "glyphicon glyphicon-user"}] (task :assignee)]
+   ]
+  )
+
+
+
+(defn find-task-status
+  [task date]
+  (let [sr (filter #(= date (% :date)) (task :log))]
+    (if (empty? sr)
+      nil
+      (get-in (last sr) [:status :key]))))
+
+
 (defn task-row
   [task]
-  (let [last-status (-> task :log last :status :key)]
-    (set-cell-text (empty-row)
-                   (task-states-index last-status)
-                   [:div {:class (clojure.string/join " " ["task" (get-in task [:type :class])])}
-                    [:div.task-icon
-                     [:span {:class "glyphicon glyphicon-tasks"}]]
-                    [:h4 (task :summary)]
-                    [:div.assignee [:span {:class "glyphicon glyphicon-user"}] (task :assignee)]
-                    ])))
+  (fn []
+    (let [last-status (find-task-status task (@search-filter :end-date))
+          first-status (find-task-status task (@search-filter :start-date))
+          last-box-position (set-cell-text (empty-row)
+                                           (task-states-index last-status)
+                                           (task-box task (get-in task [:type :class])))]
 
+      (if (or (nil? last-status) (nil? first-status))
+        (empty-row)
+        (if (and (= last-status first-status))
+          last-box-position
+          (set-cell-text last-box-position
+                         (task-states-index first-status)
+                         (task-box task "task-old")
+                         ))))))
+
+
+(defn date-picker
+  [label key date-range]
+  (fn []
+    [:div
+     [:label label]
+     [:select.form-control {:on-change (fn [e] (swap! search-filter assoc key (-> e .-target .-value)))}
+      (mapcat (fn [date] [[:option {:key date}
+                           date]])
+              (reverse date-range))
+      ]]))
 
 (defn board
   []
-  [:div.row
-   [:div.col-md-9
-    [board-header]
-    (for [t tasks] [task-row t])
-    ]
+  (fn []
+    [:div.row
+     [:div.col-md-9
+      [board-header]
 
-   [:div.col-md-3
-    [:h5 "Filters"]]
+      (for [t tasks] [task-row t])
+      ]
 
-   ])
+     [:div.col-md-3
+      [:h3 "Filters"]
+      [date-picker "Start Date" :start-date date-range]
+      [date-picker "End Date" :end-date date-range]
+      ]
+
+     ]))
 
 
 (reagent/render-component [board]
