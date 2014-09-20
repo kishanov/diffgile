@@ -5,9 +5,6 @@
 
 (enable-console-print!)
 
-;; define your app data so that it doesn't get over-written on reload
-;; (defonce app-data (atom {}))
-
 (println "Edits to this text should show up in your developer console.")
 
 (fw/watch-and-reload
@@ -15,6 +12,9 @@
                      ;; (stop-and-start-my app)
                      ))
 
+
+; App's State
+; -----------
 
 (def staff ["Yossarian" "Orr" "Dunbar" "Milo"])
 
@@ -43,14 +43,9 @@
 
     (assoc-in log [0 :status] (task-states 0))))
 
-(def search-filter (atom {:start-date (last date-range)
-                          :end-date   (last date-range)}))
 
-
-
-;(generate-activity date-range task-states)
-
-
+; Generated list of sample tasks
+; ------------------------------
 (def tasks (mapv (fn [summary]
                    {:summary  summary
                     :type     (rand-nth task-types)
@@ -71,6 +66,13 @@
 
 
 
+; Search Filter atom (reacts on changes in "Select" boxes)
+; --------------------------------------------------------
+(def search-filter (atom {:start-date (last date-range)
+                          :end-date   (last date-range)}))
+
+
+
 (defn filter-start-date
   [tasks start-date]
   (search-filter (fn [task]
@@ -88,19 +90,19 @@
 
 
 (defn set-cell-text
+  "Magic Number 1 identifies a place in 'empty-row' function where to insert content for a div"
+  []
   [row idx text]
-  (let [cur-val (get-in row [(inc idx)])]
-    (assoc-in row [(inc idx) 1] text)))
+  (assoc-in row [(inc idx) 1] text))
 
 
+; Reagent Components
+; ------------------
 (defn board-header
   []
   (reduce (fn [acc [idx text]]
             (set-cell-text acc idx [:h3 text]))
           (empty-row) (map-indexed vector (map :title task-states))))
-
-
-(board-header)
 
 
 (defn task-box
@@ -109,9 +111,7 @@
    [:div.task-icon
     [:span {:class "glyphicon glyphicon-tasks"}]]
    [:h4 (task :summary)]
-   [:div.assignee [:span {:class "glyphicon glyphicon-user"}] (task :assignee)]
-   ]
-  )
+   [:div.assignee [:span {:class "glyphicon glyphicon-user"}] (task :assignee)]])
 
 
 
@@ -124,6 +124,7 @@
 
 
 (defn task-row
+  "A component which row with appropriate task box positioning AND ghost box positioning"
   [task]
   (fn []
     (let [last-status (find-task-status task (@search-filter :end-date))
@@ -138,8 +139,7 @@
           last-box-position
           (set-cell-text last-box-position
                          (task-states-index first-status)
-                         (task-box task "task-old")
-                         ))))))
+                         (task-box task "task-old")))))))
 
 
 (defn date-picker
@@ -150,26 +150,21 @@
      [:select.form-control {:on-change (fn [e] (swap! search-filter assoc key (-> e .-target .-value)))}
       (mapcat (fn [date] [[:option {:key date}
                            date]])
-              (reverse date-range))
-      ]]))
+              (reverse date-range))]]))
 
 (defn board
   []
   (fn []
     [:div.row
+
      [:div.col-md-9
       [board-header]
-
-      (for [t tasks] [task-row t])
-      ]
+      (for [t tasks] [task-row t])]
 
      [:div.col-md-3
       [:h3 "Filters"]
       [date-picker "Start Date" :start-date date-range]
-      [date-picker "End Date" :end-date date-range]
-      ]
-
-     ]))
+      [date-picker "End Date" :end-date date-range]]]))
 
 
 (reagent/render-component [board]
